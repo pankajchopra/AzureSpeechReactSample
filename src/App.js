@@ -1,14 +1,60 @@
-import React, { useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import { Container } from 'reactstrap';
 import { getTokenOrRefresh } from './token_util';
-import './custom.css'
+import './styles/style.css'
+import './styles/custom.css'
+import {ChatMain} from './ChatMain'
+import {ChatHeader} from'./ChatHeader'
+import {useGlobalContext} from './GlobalContext';
+
 import { ResultReason } from 'microsoft-cognitiveservices-speech-sdk';
+
 
 const speechsdk = require('microsoft-cognitiveservices-speech-sdk')
 
-export default function App() { 
+export default function App() {
+
+    const {defaultMessage} =  useGlobalContext()
+    const {globalMessageList, setGlobalMessageList} = useGlobalContext()
+
+    const childGlobalMessageList = (inGlobalMessageList)=>{
+        setGlobalMessageList(inGlobalMessageList)
+    }
+
+    // const childSetTheMessage = (msg, mtype)=>{
+    //     const message = createAMessageObject( msg, mtype)
+    //     setMessage(message)
+    // }
+    //
+    // useEffect(()=>{
+    //    globalMessageList.push(message)
+    //    console.log(globalMessageList)
+    //    setGlobalMessageList(globalMessageList)
+    //     console.log(globalMessageList.toJSON())
+    //     // Stringify before saving in the localStorage
+    //    localStorage.setItem("messageList", globalMessageList.stringify())
+    // },[message])
+
     const [displayText, setDisplayText] = useState('INITIALIZED: ready to test speech...');
     const [player, updatePlayer] = useState({p: undefined, muted: false});
+
+    const localValue = localStorage.getItem('loggedInUser')
+
+
+      const getHoursAndMinutesFromDate = () => {
+         let currentDate = new Date();
+         console.log(currentDate)
+         let h = "0" + currentDate.getHours();
+         let m = "0" + currentDate.getMinutes();
+         let time = h.slice(-2)+":"+m.slice(-2)
+       return time;
+    };
+
+    function createAMessageObject(msg, messageType){
+        const mtype = messageType ?? "question"
+        return {'messageTime':getHoursAndMinutesFromDate(), 'messageText':msg, 'messageType': mtype}
+    }
+
 
     async function sttFromMic() {
         const tokenObj = await getTokenOrRefresh();
@@ -61,6 +107,8 @@ export default function App() {
         });
     }
 
+
+
     async function handleMute() {
         updatePlayer(p => { 
             if (!p.muted) {
@@ -100,38 +148,10 @@ export default function App() {
     }
 
     return (
-        <Container className="app-container">
-            <h1 className="display-4 mb-3">Speech sample app</h1>
+        <>
+            <ChatHeader/>
+            <ChatMain/>
+        </>
 
-            <div className="row main-container">
-                <div className="col-6">
-                    <i className="fas fa-microphone fa-lg mr-2" onClick={() => sttFromMic()}></i>
-                    Convert speech to text from your mic.
-
-                    <div className="mt-2">
-                        <label htmlFor="audio-file"><i className="fas fa-file-audio fa-lg mr-2"></i></label>
-                        <input 
-                            type="file" 
-                            id="audio-file" 
-                            onChange={(e) => fileChange(e)} 
-                            style={{display: "none"}} 
-                        />
-                        Convert speech to text from an audio file.
-                    </div>
-                    <div className="mt-2">
-                        <i className="fas fa-volume-up fa-lg mr-2" onClick={() => textToSpeech()}></i>
-                        Convert text to speech.
-                    </div>
-                    <div className="mt-2">
-                        <i className="fas fa-volume-mute fa-lg mr-2" onClick={() => handleMute()}></i>
-                        Pause/resume text to speech output.
-                    </div>
-
-                </div>
-                <div className="col-6 output-display rounded">
-                    <code>{displayText}</code>
-                </div>
-            </div>
-        </Container>
     );
 }
